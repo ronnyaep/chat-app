@@ -2,12 +2,23 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, 
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Set
 import json
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
 app = FastAPI()
+
+# Configuration CORS pour les WebSockets
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key-here")
 
 # Créer le dossier static s'il n'existe pas
@@ -28,22 +39,30 @@ class ConnectionManager:
         self.usernames: Set[str] = set()
 
     async def connect(self, websocket: WebSocket, username: str):
-        await websocket.accept()
-        self.active_connections[username] = websocket
-        self.usernames.add(username)
-        await self.broadcast({"type": "users", "users": list(self.usernames)})
+        try:
+            await websocket.accept()
+            self.active_connections[username] = websocket
+            self.usernames.add(username)
+            await self.broadcast({"type": "users", "users": list(self.usernames)})
+        except Exception as e:
+            print(f"Error connecting: {e}")
 
     async def disconnect(self, username: str):
         if username in self.active_connections:
+            try:
+                await self.active_connections[username].close()
+            except:
+                pass
             self.active_connections.pop(username)
             self.usernames.remove(username)
             await self.broadcast({"type": "users", "users": list(self.usernames)})
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections.values():
+        for connection in list(self.active_connections.values()):
             try:
                 await connection.send_json(message)
-            except:
+            except Exception as e:
+                print(f"Error broadcasting: {e}")
                 continue
 
 manager = ConnectionManager()
@@ -74,6 +93,9 @@ async def get_chat(request: Request):
 
 @app.get("/logout")
 async def logout(request: Request):
+    username = request.session.get("username")
+    if username:
+        await manager.disconnect(username)
     request.session.clear()
     return RedirectResponse(url="/")
 
@@ -87,6 +109,7 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"Message received from {username}: {data}")  # Debug log
             message = {
                 "type": "message",
                 "user": username,
@@ -94,4 +117,8 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             }
             await manager.broadcast(message)
     except WebSocketDisconnect:
+        print(f"WebSocket disconnected for {username}")  # Debug log
+        await manager.disconnect(username)
+    except Exception as e:
+        print(f"Error in websocket: {e}")  # Debug log
         await manager.disconnect(username)

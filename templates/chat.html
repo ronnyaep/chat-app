@@ -1,285 +1,197 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Chat en temps réel</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
         body {
-            height: 100vh;
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            background: #f5f5f5;
-        }
-
-        .sidebar {
-            background: #2c2f33;
-            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
+            background-color: #f0f2f5;
         }
-
-        .user-list {
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        .user-list h2 {
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            color: #7289da;
-        }
-
-        .user-item {
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 5px;
-            background: #36393f;
-            opacity: 0;
-            animation: slideIn 0.2s ease forwards;
-            will-change: transform, opacity;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
         .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background: #36393f;
+            height: 80vh;
         }
-
-        .chat-header {
-            padding: 20px;
-            background: #2c2f33;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .connection-status {
-            font-size: 0.9em;
-            padding: 5px 10px;
-            border-radius: 5px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .messages {
-            flex-grow: 1;
+        .users-list {
+            width: 200px;
+            border-right: 1px solid #ddd;
             padding: 20px;
             overflow-y: auto;
+        }
+        .chat-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-        }
-
-        .message {
-            padding: 10px 15px;
-            border-radius: 5px;
-            max-width: 70%;
-            opacity: 0;
-            animation: fadeIn 0.2s ease forwards;
-            will-change: transform, opacity;
-        }
-
-        .message.received {
-            background: #40444b;
-            color: white;
-            align-self: flex-start;
-        }
-
-        .message.sent {
-            background: #7289da;
-            color: white;
-            align-self: flex-end;
-        }
-
-        .message .username {
-            font-weight: 600;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-        }
-
-        .input-area {
             padding: 20px;
-            background: #40444b;
+        }
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .message.sent {
+            background: #0084ff;
+            color: white;
+            margin-left: auto;
+        }
+        .message.received {
+            background: #e9ecef;
+            color: black;
+            margin-right: auto;
+        }
+        .input-area {
             display: flex;
             gap: 10px;
         }
-
-        #message-input {
-            flex-grow: 1;
-            padding: 12px;
-            border: none;
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            background: #2c2f33;
-            color: white;
-            font-size: 16px;
-        }
-
-        #message-input:focus {
             outline: none;
-            box-shadow: 0 0 0 2px #7289da;
         }
-
         button {
-            background: #7289da;
+            padding: 10px 20px;
+            background: #0084ff;
             color: white;
             border: none;
-            padding: 0 20px;
             border-radius: 5px;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
-
         button:hover {
-            background: #677bc4;
-            transform: translateY(-2px);
+            background: #0073e6;
         }
-
-        button:active {
-            transform: translateY(0);
+        .user-item {
+            padding: 5px 10px;
+            margin: 5px 0;
+            background: #e9ecef;
+            border-radius: 5px;
         }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #2c2f33;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #202225;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #7289da;
+        .error-message {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="user-list">
-            <h2>Utilisateurs en ligne</h2>
+    <div class="chat-container">
+        <div class="users-list">
+            <h3>Utilisateurs en ligne</h3>
             <div id="users"></div>
         </div>
-    </div>
-    
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="header-content">
-                <h1>Chat</h1>
-                <div id="connection-status" class="connection-status">🟢 Connecté</div>
+        <div class="chat-area">
+            <div id="messages"></div>
+            <div id="error" class="error-message">Erreur de connexion. Tentative de reconnexion...</div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Écrivez votre message...">
+                <button onclick="sendMessage()">Envoyer</button>
+                <button onclick="logout()">Déconnexion</button>
             </div>
-            <a href="/" class="logout-btn">Déconnexion</a>
-        </div>
-        <div class="messages" id="messages"></div>
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Écrivez votre message..." autocomplete="off">
-            <button onclick="sendMessage()">Envoyer</button>
         </div>
     </div>
 
     <script>
-        let ws;
-        const username = "{{ username }}";  
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message-input');
-        const usersDiv = document.getElementById('users');
-        const statusDiv = document.getElementById('connection-status');
-        
+        const username = "{{ username }}";
+        let ws = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
         function connect() {
-            ws = new WebSocket(`ws://${window.location.host}/ws/${username}`);
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/${username}`;
+            
+            ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
-                statusDiv.textContent = '🟢 Connecté';
-                statusDiv.style.color = '#43b581';
+            ws.onopen = function() {
+                console.log('Connected to WebSocket');
+                document.getElementById('error').style.display = 'none';
+                reconnectAttempts = 0;
             };
 
-            ws.onclose = (e) => {
-                statusDiv.textContent = '🔴 Déconnecté';
-                statusDiv.style.color = '#f04747';
-                if (e.code === 1008) {
-                    alert('Nom d\'utilisateur déjà pris');
-                    window.location.href = '/';
-                } else {
-                    setTimeout(connect, 1000);
-                }
-            };
-
-            ws.onmessage = (event) => {
+            ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+                
                 if (data.type === 'users') {
                     updateUsers(data.users);
                 } else if (data.type === 'message') {
-                    addMessage(data);
+                    addMessage(data.user, data.message);
                 }
+            };
+
+            ws.onclose = function(event) {
+                console.log('WebSocket closed:', event);
+                document.getElementById('error').style.display = 'block';
+                
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    setTimeout(connect, 3000);
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
             };
         }
 
         function updateUsers(users) {
-            usersDiv.innerHTML = '';
-            users.forEach(user => {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'user-item';
-                userDiv.textContent = user;
-                usersDiv.appendChild(userDiv);
-            });
+            const usersDiv = document.getElementById('users');
+            usersDiv.innerHTML = users
+                .map(user => `<div class="user-item">${user}</div>`)
+                .join('');
         }
 
-        function addMessage(data) {
+        function addMessage(user, message) {
+            const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${data.user === username ? 'sent' : 'received'}`;
-            
-            const usernameSpan = document.createElement('div');
-            usernameSpan.className = 'username';
-            usernameSpan.textContent = data.user;
-            
-            const messageContent = document.createElement('div');
-            messageContent.textContent = data.message;
-            
-            messageDiv.appendChild(usernameSpan);
-            messageDiv.appendChild(messageContent);
+            messageDiv.className = `message ${user === username ? 'sent' : 'received'}`;
+            messageDiv.textContent = `${user === username ? 'Vous' : user}: ${message}`;
             messagesDiv.appendChild(messageDiv);
-            
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
         function sendMessage() {
-            const message = messageInput.value.trim();
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
             if (message && ws && ws.readyState === WebSocket.OPEN) {
+                console.log('Sending message:', message);
                 ws.send(message);
-                messageInput.value = '';
+                input.value = '';
             }
         }
 
-        messageInput.addEventListener('keypress', (e) => {
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
 
+        function logout() {
+            if (ws) {
+                ws.close();
+            }
+            window.location.href = '/logout';
+        }
+
+        // Connexion initiale
         connect();
     </script>
 </body>
