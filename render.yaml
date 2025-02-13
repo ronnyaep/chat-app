@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: chat-app
+    env: docker
+    buildCommand: docker build -t chat-app .
+    startCommand: docker run -p 8080:8080 chat-app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9
