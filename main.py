@@ -5,10 +5,20 @@ from fastapi.templating import Jinja2Templates
 from typing import Dict, Set
 import json
 from starlette.middleware.sessions import SessionMiddleware
+import os
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key-here")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Créer le dossier static s'il n'existe pas
+static_dir = "static"
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
+
+# Monter le dossier static seulement s'il existe
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 templates = Jinja2Templates(directory="templates")
 
 # Gestionnaire de connexions WebSocket
