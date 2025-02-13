@@ -43,7 +43,7 @@ async def get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.post("/login")
-async def login(username: str = Form(...), request: Request):
+async def login(request: Request, username: str = Form(...)):
     if username in manager.usernames:
         return templates.TemplateResponse(
             "login.html", 
